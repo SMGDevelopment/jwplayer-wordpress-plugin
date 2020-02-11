@@ -3,7 +3,6 @@
 // We use a global variable to keep track of all the players that are embedded
 // on a page. If multiple videos with the same player are embedded on the
 // same page the library only needs to be injected once.
-$jwplayer_shortcode_embedded_players = array();
 
 // Regular shortcode function.
 function jwplayer_shortcode_handle( $atts ) {
@@ -185,19 +184,12 @@ function jwplayer_shortcode_filter_player_params( $atts ) {
 
 // Create the JS embed code for the jwplayer player
 function jwplayer_shortcode_create_js_embed( $media_hash, $player_hash = null, $params = array() ) {
-	global $jwplayer_shortcode_embedded_players;
 	$player_hash = ( null === $player_hash ) ? get_option( 'jwplayer_player' ) : $player_hash;
 	$content_mask = jwplayer_get_content_mask();
 	$protocol = ( is_ssl() && JWPLAYER_CONTENT_MASK === $content_mask ) ? 'https' : 'http';
 
-	if ( in_array( $player_hash, $jwplayer_shortcode_embedded_players, true ) ) {
-		$player_script = '';
-	} else {
-		// Injecting script tag because there's no way to properly enqueue a javascript
-		// at this point in the process :'-(
-		$player_script = true;
-		$jwplayer_shortcode_embedded_players[] = $player_hash;
-	}
+	// Injecting script tag because there's no way to properly enqueue a javascript
+	// at this point in the process :'-(
 
 	if ( 'local' == $media_hash ) {
 		$element_id = "jwplayer_" . wp_generate_password( 12, false ) . "_div";
@@ -243,8 +235,7 @@ function jwplayer_shortcode_create_js_embed( $media_hash, $player_hash = null, $
 
 	// Redeclare fitVids to stop it from breaking the JW Player embedding.
 	if ( JWPLAYER_DISABLE_FITVIDS ) {
-		if ( $player_script ) {
-			return "
+		return "
 		<script type='text/javascript' src='" . esc_url( $js_lib ) . "'></script>
 			<div id='" . esc_attr( $element_id ) . "'></div>
 		<script type='text/javascript'>
@@ -254,22 +245,9 @@ function jwplayer_shortcode_create_js_embed( $media_hash, $player_hash = null, $
 			);
 		</script>
 	";
-		} else { // no player script
-			return "
-			<div id='" . esc_attr( $element_id ) . "'></div>
-		<script type='text/javascript'>
-			" . 'if(typeof(jQuery)=="function"){(function($){$.fn.fitVids=function(){}})(jQuery)};' . "
-				jwplayer('" . esc_attr( $element_id ) . "').setup(
-				" . wp_json_encode( $params ) . "
-			);
-		</script>
-	";
-		}
 	} else {
-
 		// no fitvids script here.
-		if ( $player_script ) {
-			return "
+		return "
 		<script type='text/javascript' src='" . esc_url( $js_lib ) . "'></script>
 			<div id='" . esc_attr( $element_id ) . "'></div>
 		<script type='text/javascript'>
@@ -278,15 +256,5 @@ function jwplayer_shortcode_create_js_embed( $media_hash, $player_hash = null, $
 			);
 		</script>
 	";
-		} else { // no player script
-			return "
-			<div id='" . esc_attr( $element_id ) . "'></div>
-		<script type='text/javascript'>
-				jwplayer('" . esc_attr( $element_id ) . "').setup(
-				" . wp_json_encode( $params ) . "
-			);
-		</script>
-	";
-		}
 	}
 }
