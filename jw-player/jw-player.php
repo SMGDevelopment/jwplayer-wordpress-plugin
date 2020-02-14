@@ -20,6 +20,7 @@ require_once( JWPLAYER_PLUGIN_DIR . '/include/settings.php' );
 require_once( JWPLAYER_PLUGIN_DIR . '/include/shortcode.php' );
 require_once( JWPLAYER_PLUGIN_DIR . '/include/validation.php' );
 require_once( JWPLAYER_PLUGIN_DIR . '/include/utils.php' );
+require_once( JWPLAYER_PLUGIN_DIR . '/include/gutenberg-block.php' );
 
 // Default settings
 define( 'JWPLAYER_PLUGIN_VERSION', '1.6.2' );
