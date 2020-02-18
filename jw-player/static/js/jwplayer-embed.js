@@ -1,7 +1,4 @@
 let VideoSelector;
-(async()=> {
-	VideoSelector= (await import('./jwplayer-selector.js')).default;
-})();
 
 (()=> {
 	const	{registerBlockType}= wp.blocks,
@@ -9,7 +6,7 @@ let VideoSelector;
 		{createElement, Component}= wp.element,
 		el= createElement;
 	registerBlockType(
-		'jwplayer-embed-block/jwplayer-embed', {
+		'jwplayer-block/jwplayer-embed', {
 			title: 'JWPlayer Video',
 			icon: el(SVG, { 
 					alt: 'JWPlayer',
@@ -27,44 +24,47 @@ let VideoSelector;
 				),
 			category: 'embed',
 			attributes: {
-				video: {
+				key: {
 					type: 'string',
-				}
+				},
 			},
 			edit: class JwBlockEdit extends Component {
 				constructor(...args) {
 					super(...args);
 					this.setVideo= this.setVideo.bind(this);
-					this.video= undefined;
 				}
-
 				setVideo(v) {
-					this.props.setAttributes({video: v.key});
+					if (!v)
+						return console.log('what you talkin about, willis?');
+					this.props.setAttributes({key: `${v.key}`});
 				}
-				
+				componentDidMount() {
+					/* import jw selector here, so we can guarantee a subsequent paint event */
+					const {key}= this.props.attributes;
+					const paint= ()=> this.forceUpdate();
+					import('./jwplayer-selector.js').then(imp=> {
+						VideoSelector= imp.default;
+						paint();
+					});	
+				}
 				render() {
-					const	{video}= this.props.attributes;
+					const	{key}= this.props.attributes;
 					return el(
 						'div', null,
-							video && el('img', {src:  `http://content.jwplatform.com/thumbs/${video}-40.jpg`}),
-							video	? el('div', null, `[jwplayer ${video}]`)
+							key && el('img', {src:  `http://content.jwplatform.com/thumbs/${key}-40.jpg`}),
+							key	? el('div', null, `[jwplayer ${key}]`)
 								: VideoSelector
-									? el(VideoSelector, {videos: [], onVideoSelect: this.setVideo})
+									? el(VideoSelector, {onVideoSelect: this.setVideo})
 									: el('div', null,
-										el(Spinner), '... loading VideoSelector')
+										el(Spinner), '... loading JW VideoSelector')
 					)
 				}
 			},
 			save: class JwBlockSave extends Component {
 				render (props) {
-console.log('SAVE',this,arguments);
-					const {video}= this.props.attributes;	
-					return el('div', null, video ? `[jwplayer ${video}]` :null);
+					const {key}= this.props.attributes;	
+					return el('div', null, key ? `[jwplayer ${key}]` :null);
 				}
-			},
-			attributes: {
-				shortcode: {
-				},
 			},
 		}
 	);
