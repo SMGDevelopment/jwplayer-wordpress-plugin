@@ -15,6 +15,7 @@ const	{ IconButton, Popover, Spinner } = wp.components,
 	debounce= (f, wait= 100)=> {
 		let timeout;
 		return (...args)=> {
+			const id= new Date().getTime();
 			clearTimeout(timeout);
 			timeout= setTimeout(()=> f(...args), wait);
 		};
@@ -26,6 +27,7 @@ export default class JwSelector extends Component {
 		super(...args);
 		this.aborters= {};
 		this.bindListNode= this.bindListNode.bind(this);
+		this.search= debounce(this.search.bind(this), 1000); 
 		this.instanceId= new Date().getTime();
 		this.onChange= this.onChange.bind(this);
 		this.state= {
@@ -43,17 +45,16 @@ export default class JwSelector extends Component {
 
 	onChange(event) {
 		const	input= event.target.value;
-		this.setState({input}, debounce(()=> {
-			const searchId= new Date().getTime();
+		this.setState({input}, ()=> 
 			this.setState({
-				currentSearch: searchId,
+				currentSearch: new Date().getTime(),
 				loading: 1 < input.length,
 				warning: '',
 			}, ()=> 1<input.length && this.search(input))
-		}, 1000));
-		/* 1 second debounce to minimize problems with jw rate limit */
+		);
 	}
 
+	/* run this under debounce to minimize impact of jw's rate limit for searches */
 	search(text) {
 		const	{currentSearch}= this.state,
 			queryParams= {
@@ -108,7 +109,7 @@ export default class JwSelector extends Component {
 		return el('div', {className: 'jw-videoselector'},
 				el('input', {
 					autoFocus: autoFocus,
-					className: idPfx, 
+					className: `${idPfx}-search`, 
 					onChange: this.onChange,
 					onInput: event=> event.stopPropagation(),
 					placeholder: 'Type video name',
@@ -126,7 +127,7 @@ export default class JwSelector extends Component {
 								id: `${idPfx}-input-suggestions-${instanceId}`,
 								ref: this.bindListNode,
 								role: 'listbox',
-							}, videos.map((vid, i)=> 
+							}, videos && videos.map((vid, i)=> 
 								el('button', {
 										className: `${idPfx}-input-suggestion`,
 										id: `${idPfx}-${instanceId}-${i}`,
